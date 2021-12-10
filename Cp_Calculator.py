@@ -78,3 +78,48 @@
 #       Call fin module
 #           Pass object to module
 #               Fin module requests inputs for # fins (3, 4, or 6 only)
+
+class Rocket():
+    """
+    object to define Rocket and its parameters, retrieve data, etc
+    """
+    def __init__(self, name):
+        """
+        adf
+        :param name:
+        """
+        self._name = name
+
+def print_statement(statement):
+    """
+    module to print multi-line output stored in an array to the user screen
+    :param statement: string array
+    :return: none
+    """
+    for lines in statement:
+        print(lines)
+
+
+def main():
+    """
+    Primary function to introduce program, collect user input, and call modules for calculation
+    """
+    greeting = ("Welcome to the Model Rocket Cp Calculator.\n")
+    description = ("This programs takes inputs of model rocket geometry as measured from the tip of the nose cone",
+                   "and calculates the aerodynamic center of pressure. The Cp Margin is defined as (Cp - Cg).",
+                   "This value should be greater than or equal to the diameter of the main rocket body tube (in inches)\n")
+    assumptions =  ("Basic Program Assumptions: ",
+                    "       relative angle less than 10 degrees",
+                    "       velocity less 600 feet/sec (much less than speed of sound)",
+                    "       airflow is smooth with no rapid change",
+                    "       rocket thin compared to length (t/l </= ???)",
+                    "       nose comes smoothly to a point",
+                    "       rocket is an axially symmetric rigid body",
+                    "       fins are thin, flat plates")
+    print(greeting)
+    print_statement(description)
+    print_statement(assumptions)
+    Rocket("Test_Mission")
+
+if __name__ == "__main__":
+    main()
