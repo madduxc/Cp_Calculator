@@ -83,12 +83,26 @@ class Rocket():
     """
     object to define Rocket and its parameters, retrieve data, etc
     """
-    def __init__(self, name):
+    def __init__(self, name, diameter, num_fins):
         """
         adf
         :param name:
         """
         self._name = name
+        self._diameter = diameter
+        self._num_fins = num_fins
+
+def initialize_rocket():
+    """
+    function to set up basic rocket definition and call the initial Rocket class
+    :return: none
+    """
+    # get input from user to initialize rocket
+    rocket_name = input("Enter the rocket name that you would like to analyze: ")
+    diam_input = input("Enter the diameter of the uppermost body tube (in inches): ")
+    num_fins = input("Enter the number of fins on your rocket: ")
+    # send information to Rocket class to initialize Rocket
+    Rocket(rocket_name, diam_input, num_fins)
 
 def print_statement(statement):
     """
@@ -119,7 +133,8 @@ def main():
     print(greeting)
     print_statement(description)
     print_statement(assumptions)
-    Rocket("Test_Mission")
+    initialize_rocket()
+    # Rocket("Test_Mission", 1.25, 3)
 
 if __name__ == "__main__":
     main()
