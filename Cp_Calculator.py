@@ -30,7 +30,7 @@
 
 # Basic structure
 # Print statement - purpose of the code, limitations, definitions
-# General input: name of rocket, date, number stages, number of body sections, number of shoulders, number of
+# General input: name of rocket, date, [number of stages], number of body sections, number of shoulders, number of
 # boattails, number of fins (repeat for each stage)
 # Create object of Rocket class
 # Define two lists: one to collect Cn_alpha_component; one to collect x_bar_component
@@ -85,12 +85,83 @@ class Rocket():
     """
     def __init__(self, name, diameter, num_fins):
         """
-        adf
-        :param name:
+        defines Rocket objects, retrieves private members and stores calculated values
+        :param name:        (string) name of rocket
+        :param diameter:    (float) diameter of the upper rocket body tube
+        :param num_fins:    (int) number of fins attached to the lower body tube
         """
-        self._name = name
-        self._diameter = diameter
-        self._num_fins = num_fins
+        self._name = name                   # string name of rocket
+        self._diameter = diameter           # [in] diameter or rocket
+        self._num_fins = num_fins           # [] number of fins
+        self._components = []               # array of components analyzed
+        self._x_bar = []                    # [in] array of x_bar values corresponding to components
+        self._comp_Cn_alpha = []            # [] array of Cn_alpha values corresponding to components
+
+    def get_name(self):
+        """
+        Returns the Rocket name property when called
+        :return: Rocket._name
+        """
+        return self._name
+
+    def get_diameter(self):
+        """
+        Returns the Rocket diameter property when called
+        :return: Rocket._diameter
+        """
+        return self._diameter
+
+    def get_num_fins(self):
+        """
+        Returns the Rocket number of fins property when called
+        :return: Rocket._num_fins
+        """
+        return self._num_fins
+
+    def add_component(self, comp):
+        """
+        Module to add a component to the Rocket component array
+        :param comp: (string) name of component
+        :return: none
+        """
+        self._components.append(comp)
+
+    def get_components(self):
+        """
+        Returns the list of Rocket components when called
+        :return: Rocket._components
+        """
+        return self._components
+
+    def add_x_bar(self, x_bar):
+        """
+        Module to add a component x_bar value to the Rocket x_bar array
+        :param x_bar: (float) distance (from tip of nose cone) to Cp of a given component
+        :return: none
+        """
+        self._x_bar.append(x_bar)
+
+    def get_x_bar(self):
+        """
+        Returns the list of Rocket x_bar values when called
+        :return: Rocket._x_bar
+        """
+        return self._x_bar
+
+    def add_Cn_alpha(self, Cn_alpha):
+        """
+        Module to add a component Cn_alpha value to the Rocket comp_Cn_alpha array
+        :param Cn_alpha: (float) Normal force coefficient of a given component
+        :return: none
+        """
+        self._comp_Cn_alpha.append(Cn_alpha)
+
+    def get_Cn_alpha(self):
+        """
+        Returns the list of Rocket Cn_alpha values when called
+        :return: Rocket.comp_Cn_alpha
+        """
+        return self._comp_Cn_alpha
 
 def initialize_rocket():
     """
@@ -102,7 +173,8 @@ def initialize_rocket():
     diam_input = input("Enter the diameter of the uppermost body tube (in inches): ")
     num_fins = input("Enter the number of fins on your rocket: ")
     # send information to Rocket class to initialize Rocket
-    Rocket(rocket_name, diam_input, num_fins)
+    rocket = Rocket(rocket_name, diam_input, num_fins)
+    return rocket
 
 def print_statement(statement):
     """
@@ -110,15 +182,15 @@ def print_statement(statement):
     :param statement: string array
     :return: none
     """
-    for lines in statement:
-        print(lines)
+    for line in statement:
+        print(line)
 
 
 def main():
     """
     Primary function to introduce program, collect user input, and call modules for calculation
     """
-    greeting = ("Welcome to the Model Rocket Cp Calculator.\n")
+    greeting = ("Welcome to the Model Rocket Cp Calculator.\n",)
     description = ("This programs takes inputs of model rocket geometry as measured from the tip of the nose cone",
                    "and calculates the aerodynamic center of pressure. The Cp Margin is defined as (Cp - Cg).",
                    "This value should be greater than or equal to the diameter of the main rocket body tube (in inches)\n")
@@ -129,12 +201,12 @@ def main():
                     "       rocket thin compared to length (t/l </= ???)",
                     "       nose comes smoothly to a point",
                     "       rocket is an axially symmetric rigid body",
-                    "       fins are thin, flat plates")
-    print(greeting)
+                    "       fins are thin, flat plates\n")
+    print_statement(greeting)
     print_statement(description)
     print_statement(assumptions)
-    initialize_rocket()
-    # Rocket("Test_Mission", 1.25, 3)
+    rocket_1 = initialize_rocket()
+    print(rocket_1.get_name())
 
 if __name__ == "__main__":
     main()
