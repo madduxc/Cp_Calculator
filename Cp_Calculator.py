@@ -35,27 +35,29 @@
 # Create object of Rocket class
 # Define two lists: one to collect Cn_alpha_component; one to collect x_bar_component
 #
-# Call module to calculate nose cone Cp - required
-#   Pass object to module
-#       Nose module requests input for nose length, diameter, and shape
-#           1 = Conical
-#           2 = Ogive (curved surface, pointed tip)
-#           3 = Parabolic (curved surface, rounded tip)
-#           4 = Capsule (Mercury, Gemini, Saturn)
-#       Enter values to object
-#       Cn_nose = 2
-#       Look up x_bar_nose based on shape
-#           Capsule is a special case which requires additional input and calculation
-#   Return Cn_alpha_nose, x_bar_nose
-# Enter Cn_nose and x_bar_nose values to lists
 # Enter type of section to calculate (if none, enter 0)
 #   0 = exit
-#   1 = body
-#   2 = shoulder
-#   3 = boattail
-#   4 = fins
+#   1 = nose (required)
+#   2 = body (required)
+#   3 = shoulder
+#   4 = boattail
+#   5 = fins (required)
 # While type != 0
 #   Case 1:
+#       Call nose module
+#           Pass object to module
+#               nose module requests input for nose length, diameter, and shape
+#                   1 = Conical
+#                   2 = Ogive (curved surface, pointed tip)
+#                   3 = Parabolic (curved surface, rounded tip)
+#                   4 = Capsule (Mercury, Gemini, Saturn)
+#               enter values to object
+#               Cn_nose = 2
+#               look up x_bar_nose based on shape
+#               capsule is a special case which requires additional input and calculation
+#           Return Cn_alpha_nose, x_bar_nose
+# Enter Cn_nose and x_bar_nose values to lists
+#   Case 2:
 #       Call body module
 #           Pass object to module
 #               Body module requests input for body segment length, diameter, and distance from ref
@@ -63,7 +65,7 @@
 #               Check sum to verify distance from ref = distance + length of previous
 #               Check sum to verify diameter of previous object = body diameter
 #           Return 0
-#   Case 2 or Case 3:
+#   Case 3 or Case 4:
 #       Call shoulder/boattail module
 #           Pass object to module
 #               Shoulder/boattail module requests inputs for length, d1, d2, and dist from ref
@@ -74,7 +76,7 @@
 #               Check sum to verify distance from ref = distance + length of previous
 #               Check sum to verify diameter of previous object = d1
 #           Return Cn_s/b, x_bar_s/b
-#   Case 4:
+#   Case 5:
 #       Call fin module
 #           Pass object to module
 #               Fin module requests inputs for # fins (3, 4, or 6 only)
@@ -176,6 +178,50 @@ def initialize_rocket():
     rocket = Rocket(rocket_name, diam_input, num_fins)
     return rocket
 
+def find_nose(rocket):
+    """
+    module to find the Cn_alpha and x_bar of the nose cone
+    :param rocket: (object) current class object being calculated
+    :return: 0 or 1
+    """
+
+
+def find_Cna(rocket):
+    """
+    module to control data input and calculation of component Cn_alpha
+    :param rocket: (object) current class object being calculated
+    :return: Cn_alpha (float), x_bar (float)
+    """
+    comp = 9                            # initialize component to non-valid digit
+    ### INPUT LOOP ###
+    while comp != 0:                    # enter the input loop for calling Cn_alpha
+        err_val = 1                     # initialize error code to set
+        component_call = ("Enter type of section to calculate (if none, enter 0):",
+                          "     0 = Exit",
+                          "     1 = Nose (1 required)",
+                          "     2 = Body (At least 1 required)",
+                          "     3 = Shoulder",
+                          "     4 = Boattail",
+                          "     5 = Fins (3, 4, or 6 required)")
+        print_statement(component_call)
+        ### ERROR LOOP ###
+        while err_val != 0:             # validate input as single digit integer within valid range
+            err_val = 0                 # clear error code - if no error, code will exit error loop
+            component = input("Component Type (1 - 5): ")
+            if len(component) != 1:     # check for single-digit input
+                err_val = 1             # set the error code
+                print("Error: incorrect input type.  Please enter a valid number between  0 and 5.")
+            # check for valid integer input
+            elif ord(component) < 48 or ord(component) > 53:
+                err_val = 1
+                print("Error: incorrect input type.  Please enter a valid number between  0 and 5.")
+        comp = ord(component) - 48
+        ######### THIS IS WHERE THE MODULE CALLS LIVE ###########
+        print(comp)
+    # need to add validation that nose, body and fins have been entered
+    return 0
+
+
 def print_statement(statement):
     """
     module to print multi-line output stored in an array to the user screen
@@ -185,11 +231,18 @@ def print_statement(statement):
     for line in statement:
         print(line)
 
-
 def main():
     """
     Primary function to introduce program, collect user input, and call modules for calculation
     """
+    cna_description = ("Normal force on each region represented by Cn_alpha.",
+                       "Center of pressure on each region represented by x_bar.",
+                       "Total force acting on rocket (Cn_alpha_rocket) is sum of forces acting on nose, shoulders,",
+                       "boattails, and fins in body effect.",
+                       "Center of pressure for entire rocket (x_bar_rocket) is the sum of the moments acting on each",
+                       "component of the rocket (Cn_alpha_nose * x_bar_nose + ... + Cn_alpha_fins_in_body_effect * x_bar_fins)",
+                       "divided by Cn_alpha_rocket.\n",
+                       "Required: rocket must have nose, one body section, and fins.")
     greeting = ("Welcome to the Model Rocket Cp Calculator.\n",)
     description = ("This programs takes inputs of model rocket geometry as measured from the tip of the nose cone",
                    "and calculates the aerodynamic center of pressure. The Cp Margin is defined as (Cp - Cg).",
@@ -206,7 +259,9 @@ def main():
     print_statement(description)
     print_statement(assumptions)
     rocket_1 = initialize_rocket()
+    print_statement(cna_description)
     print(rocket_1.get_name())
+    find_Cna(rocket_1)
 
 if __name__ == "__main__":
     main()
