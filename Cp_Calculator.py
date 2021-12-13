@@ -85,7 +85,7 @@ class Rocket():
     """
     object to define Rocket and its parameters, retrieve data, etc
     """
-    def __init__(self, name, diameter, num_fins):
+    def __init__(self, name, num_fins):
         """
         defines Rocket objects, retrieves private members and stores calculated values
         :param name:        (string) name of rocket
@@ -93,9 +93,10 @@ class Rocket():
         :param num_fins:    (int) number of fins attached to the lower body tube
         """
         self._name = name                   # string name of rocket
-        self._diameter = diameter           # [in] diameter or rocket
+        self._diameter = []                 # [in] diameter of rocket body tubes (must be entered in order, nose-to-tail)
+        self._length = 0                    # [in] total length of rocket
         self._num_fins = num_fins           # [] number of fins
-        self._components = []               # array of components analyzed
+        self._components = {}               # {} dictionary of components analyzed and corresponding length
         self._x_bar = []                    # [in] array of x_bar values corresponding to components
         self._comp_Cn_alpha = []            # [] array of Cn_alpha values corresponding to components
 
@@ -105,6 +106,14 @@ class Rocket():
         :return: Rocket._name
         """
         return self._name
+
+    def add_diameter(self, dia):
+        """
+        Module to add a body tube diameter value to the Rocket diameter array
+        :param dia: (float) diameter of a given component
+        :return: none
+        """
+        self._diameter.append(dia)
 
     def get_diameter(self):
         """
@@ -120,13 +129,14 @@ class Rocket():
         """
         return self._num_fins
 
-    def add_component(self, comp):
+    def add_component(self, comp, length):
         """
         Module to add a component to the Rocket component array
         :param comp: (string) name of component
+        :param length: (float) length of component
         :return: none
         """
-        self._components.append(comp)
+        self._components[comp] = length
 
     def get_components(self):
         """
@@ -165,6 +175,22 @@ class Rocket():
         """
         return self._comp_Cn_alpha
 
+    def add_length(self, comp_length):
+        """
+        module to add component length to overall rocket length
+        :param comp_length: (float) length of rocket component
+        :return: none
+        """
+        self._length += comp_length
+
+    def get_length(self):
+        """
+        Returns the total length of Rocket
+        :return: Rocket._length
+        """
+        return self._length
+
+
 def initialize_rocket():
     """
     function to set up basic rocket definition and call the initial Rocket class
@@ -172,11 +198,11 @@ def initialize_rocket():
     """
     # get input from user to initialize rocket
     rocket_name = input("Enter the rocket name that you would like to analyze: ")
-    diam_input = input("Enter the diameter of the uppermost body tube (in inches): ")
     num_fins = input("Enter the number of fins on your rocket: ")
     # send information to Rocket class to initialize Rocket
-    rocket = Rocket(rocket_name, diam_input, num_fins)
+    rocket = Rocket(rocket_name, num_fins)
     return rocket
+
 
 def find_nose(rocket):
     """
@@ -210,16 +236,27 @@ def find_nose(rocket):
         x_bar = 0.5 * len_nose
     else:
         x_bar = 0                   ################ to be updated later
-    rocket.add_component("Nose")
+    rocket.add_component("Nose", len_nose)
     rocket.add_Cn_alpha(Cna_nose)
     rocket.add_x_bar(x_bar)
+    rocket.add_length(len_nose)
 
-
-#               look up x_bar_nose based on shape
-#               capsule is a special case which requires additional input and calculation
-#           Return len_nose
-# Enter Cn_nose and x_bar_nose values to lists
-
+def find_body(rocket):
+    """
+    module to get rocket body tube length and diameter from user
+    :param rocket: (object) current class object being calculated
+    :return: 0 or 1
+    """
+    dist_to_body = float(input("Enter the distance from the forward tip of the nose cone to the top of the body tube (in inches): "))
+    len_body = float(input("Enter the length of the body tube (in inches): "))
+    diam_body = input("Enter the diameter of the body tube (in inches): ")
+    Cna_body = 0                    # standard input - body tube section does not contribute normal force
+    x_bar = dist_to_body + (len_body / 2)
+    rocket.add_diameter(diam_body)
+    rocket.add_component("Body", len_body)
+    rocket.add_Cn_alpha(Cna_body)
+    rocket.add_x_bar(x_bar)
+    rocket.add_length(len_body)
 
 def find_Cna(rocket):
     """
@@ -250,7 +287,14 @@ def find_Cna(rocket):
         ######### THIS IS WHERE THE MODULE CALLS LIVE ###########
         if comp == 1:
             find_nose(rocket)
-        print(comp)
+        elif comp == 2:
+            find_body(rocket)
+        elif comp == 3:
+            pass
+        elif comp == 4:
+            pass
+        elif comp == 5:
+            pass
     # need to add validation that nose, body and fins have been entered
     return 0
 
@@ -314,6 +358,7 @@ def main():
     print(rocket_1.get_name())
     find_Cna(rocket_1)
     print(rocket_1.get_name())
+    print(rocket_1.get_length())
     print(rocket_1.get_components())
     print(rocket_1.get_Cn_alpha())
     print(rocket_1.get_x_bar())
