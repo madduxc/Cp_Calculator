@@ -184,6 +184,41 @@ def find_nose(rocket):
     :param rocket: (object) current class object being calculated
     :return: 0 or 1
     """
+    # get shape
+    len_nose = float(input("Enter the length from the forward tip of the nose cone to the top of the body tube: "))
+    prompt = ("Input the shape of the rocket nose cone:",
+              "     1 = Conical (straight surface, pointed tip)",
+              "     2 = Ogive (curve surface, rounded tip",
+              "     3 = Parabolic (curved surface, rounded tip",
+              "     4 = Capsule (ex: Mercury, Gemini, Saturn")
+    min_val = 1
+    max_val = 4
+    err_val = 1                     # initialize error code to set
+    print_statement(prompt)
+    ### ERROR LOOP ###
+    while err_val != 0:             # validate input as single digit integer within valid range
+        err_val = 0                 # clear error code - if no error, code will exit error loop
+        shape_val = input("Nose Cone Shape (1 - 4): ")
+        err_val = validate_input(shape_val, min_val, max_val, err_val)
+    shape = ord(shape_val) - 48
+    Cna_nose = 2                    # this is common to all nose cone shapes (except capsule)
+    if shape == 1:
+        x_bar = 2/3 * len_nose
+    elif shape == 2:
+        x_bar = 0.466 * len_nose
+    elif shape == 3:
+        x_bar = 0.5 * len_nose
+    else:
+        x_bar = 0                   ################ to be updated later
+    rocket.add_component("Nose")
+    rocket.add_Cn_alpha(Cna_nose)
+    rocket.add_x_bar(x_bar)
+
+
+#               look up x_bar_nose based on shape
+#               capsule is a special case which requires additional input and calculation
+#           Return len_nose
+# Enter Cn_nose and x_bar_nose values to lists
 
 
 def find_Cna(rocket):
@@ -192,6 +227,8 @@ def find_Cna(rocket):
     :param rocket: (object) current class object being calculated
     :return: Cn_alpha (float), x_bar (float)
     """
+    min_val = 0
+    max_val = 5
     comp = 9                            # initialize component to non-valid digit
     ### INPUT LOOP ###
     while comp != 0:                    # enter the input loop for calling Cn_alpha
@@ -208,19 +245,33 @@ def find_Cna(rocket):
         while err_val != 0:             # validate input as single digit integer within valid range
             err_val = 0                 # clear error code - if no error, code will exit error loop
             component = input("Component Type (1 - 5): ")
-            if len(component) != 1:     # check for single-digit input
-                err_val = 1             # set the error code
-                print("Error: incorrect input type.  Please enter a valid number between  0 and 5.")
-            # check for valid integer input
-            elif ord(component) < 48 or ord(component) > 53:
-                err_val = 1
-                print("Error: incorrect input type.  Please enter a valid number between  0 and 5.")
+            err_val = validate_input(component, min_val, max_val, err_val)
         comp = ord(component) - 48
         ######### THIS IS WHERE THE MODULE CALLS LIVE ###########
+        if comp == 1:
+            find_nose(rocket)
         print(comp)
     # need to add validation that nose, body and fins have been entered
     return 0
 
+def validate_input(value, min_val, max_val, err_code):
+    """
+    Takes an unknown input and verifies that it is a single-digit integer within a given range
+    Returns an error code: 0 for valid input; 1 for invalid input
+    :param value: (int/float/string)
+    :param err_code: (int)
+    :param min_val: (int)
+    :param max_val: (int)
+    :return: err_code
+    """
+    if len(value) != 1:                 # check for single-digit input
+        err_code = 1                    # set the error code
+        print("Error: incorrect input type.  Please enter a valid number between  0 and 5.")
+    # check for valid integer input
+    elif ord(value) < (min_val + 48) or ord(value) > (max_val + 48):
+        err_code = 1                     # set error code
+        print("Error: incorrect input range.  Please enter a valid number between  0 and 5.")
+    return err_code
 
 def print_statement(statement):
     """
@@ -262,6 +313,11 @@ def main():
     print_statement(cna_description)
     print(rocket_1.get_name())
     find_Cna(rocket_1)
+    print(rocket_1.get_name())
+    print(rocket_1.get_components())
+    print(rocket_1.get_Cn_alpha())
+    print(rocket_1.get_x_bar())
+
 
 if __name__ == "__main__":
     main()
