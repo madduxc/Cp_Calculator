@@ -13,15 +13,17 @@ class TestRocketClass(unittest.TestCase):
         """
         verify values entered int initializer are stored and returned properly
         """
-        rocket = Rocket("Test Rocket", 6)
+        rocket = Rocket("Test Rocket 1")
+        rocket.add_fins(6)
         rocket.add_component("nose", 2.5)
         rocket.add_component("boattail", 0.75)
         rocket.add_x_bar(12.3)
         rocket.add_x_bar(15)
         rocket.add_Cn_alpha(0.955)
         rocket.add_Cn_alpha(1.1)
-        self.assertEqual(rocket.get_name(), "Test Rocket")
+        self.assertEqual(rocket.get_name(), "Test Rocket 1")
         self.assertEqual(rocket.get_num_fins(), 6)
         self.assertEqual(rocket.get_components(), {"nose": 2.5, "boattail": 0.75})
         self.assertEqual(rocket.get_x_bar(), [12.3, 15])
         self.assertEqual(rocket.get_Cn_alpha(), [0.955, 1.1])
+

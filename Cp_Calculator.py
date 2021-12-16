@@ -3,89 +3,15 @@
 #               :
 # Date          : August 29, 2021
 # Description   : Program to take input of model rocket geometry and output Center of Pressure as
-#                 measured from the tip of the nose cone.
-# Notes from readings.
-# Assumptions:  relative angle less than 10 degrees
-#               velocity less 600 feet/sec (much less than speed of sound)
-#               airflow is smooth with no rapid change
-#               rocket thin compared to length (t/l </= ???)
-#               nose comes smoothly to a point
-#               rocket is an axially symmetric rigid body
-#               fins are thin, flat plates
-#
-# Cp margin should be at least equal to the diameter of the largest body tube (inches)
-# Cp margin defined?  (Cp - Cg) ?
-# Normal force on each region represented by Cn_alpha
-# Normal force acting on the body is negligible for small alpha (<30 degrees).
-# Body geometry is required for fin Cp calcs and drawing pictures
-# Center of pressure on each region represented by x_bar
-#
-# Total force acting on rocket (Cn_alpha_rocket) is sum of forces acting on nose, shoulders, boattails,
-#  and fins in body effect
-# Required: rocket must have nose, one body section, and fins - others can be set to zero if not present
-#
-# Center of pressure for entire rocket (x_bar_rocket) is the sum of the moments acting on each
-# component of the rocket (Cn_alpha_nose * x_bar_nose + ... + Cn_alpha_fins_in_body_effect * x_bar_fins)
-# divided by Cn_alpha_rocket
+#                 measured from the tip of the nose cone.  See Notes.txt for full description
 
-# Basic structure
-# Print statement - purpose of the code, limitations, definitions
-# General input: name of rocket, date, [number of stages], number of body sections, number of shoulders, number of
-# boattails, number of fins (repeat for each stage)
-# Create object of Rocket class
-# Define two lists: one to collect Cn_alpha_component; one to collect x_bar_component
-#
-# Enter type of section to calculate (if none, enter 0)
-#   0 = exit
-#   1 = nose (required)
-#   2 = body (required)
-#   3 = shoulder
-#   4 = boattail
-#   5 = fins (required)
-# While type != 0
-#   Case 1:
-#       Call nose module
-#           Pass object to module
-#               nose module requests input for nose length, diameter, and shape
-#                   1 = Conical
-#                   2 = Ogive (curved surface, pointed tip)
-#                   3 = Parabolic (curved surface, rounded tip)
-#                   4 = Capsule (Mercury, Gemini, Saturn)
-#               enter values to object
-#               Cn_nose = 2
-#               look up x_bar_nose based on shape
-#               capsule is a special case which requires additional input and calculation
-#           Return Cn_alpha_nose, x_bar_nose
-# Enter Cn_nose and x_bar_nose values to lists
-#   Case 2:
-#       Call body module
-#           Pass object to module
-#               Body module requests input for body segment length, diameter, and distance from ref
-#               Enter values to object
-#               Check sum to verify distance from ref = distance + length of previous
-#               Check sum to verify diameter of previous object = body diameter
-#           Return 0
-#   Case 3 or Case 4:
-#       Call shoulder/boattail module
-#           Pass object to module
-#               Shoulder/boattail module requests inputs for length, d1, d2, and dist from ref
-#               Enter values to object
-#               Look up nose diameter
-#               Calculate Cn_s/b = 2 * ( (d2 / d_nose)^2 - (d1 / d_nose)^2)
-#               Calculate x_bar_s/b = x_s/b + L/3 * (1 + (1 - d1/d2) / (1 - (d1/d2)^2))
-#               Check sum to verify distance from ref = distance + length of previous
-#               Check sum to verify diameter of previous object = d1
-#           Return Cn_s/b, x_bar_s/b
-#   Case 5:
-#       Call fin module
-#           Pass object to module
-#               Fin module requests inputs for # fins (3, 4, or 6 only)
+import math
 
 class Rocket():
     """
     object to define Rocket and its parameters, retrieve data, etc
     """
-    def __init__(self, name, num_fins):
+    def __init__(self, name):
         """
         defines Rocket objects, retrieves private members and stores calculated values
         :param name:        (string) name of rocket
@@ -95,7 +21,7 @@ class Rocket():
         self._name = name                   # string name of rocket
         self._diameter = []                 # [in] diameter of rocket body tubes (must be entered in order, nose-to-tail)
         self._length = 0                    # [in] total length of rocket
-        self._num_fins = num_fins           # [] number of fins
+        self._num_fins = 0                  # number of fins
         self._components = {}               # {} dictionary of components analyzed and corresponding length
         self._x_bar = []                    # [in] array of x_bar values corresponding to components
         self._comp_Cn_alpha = []            # [] array of Cn_alpha values corresponding to components
@@ -120,7 +46,16 @@ class Rocket():
         Returns the Rocket diameter property when called
         :return: Rocket._diameter
         """
-        return self._diameter
+        return self._diameter[0]
+
+    def add_fins(self, num_fins):
+        """
+        Adds the number of fins to Rocket class object
+        :param num_fins: (int)
+        :return: none
+        """
+        self._num_fins = num_fins
+
 
     def get_num_fins(self):
         """
@@ -198,9 +133,8 @@ def initialize_rocket():
     """
     # get input from user to initialize rocket
     rocket_name = input("Enter the rocket name that you would like to analyze: ")
-    num_fins = input("Enter the number of fins on your rocket: ")
     # send information to Rocket class to initialize Rocket
-    rocket = Rocket(rocket_name, num_fins)
+    rocket = Rocket(rocket_name)
     return rocket
 
 
@@ -235,7 +169,17 @@ def find_nose(rocket):
     elif shape == 3:
         x_bar = 0.5 * len_nose
     else:
+        # this multiple inputs for distance and diameter in order to calculate the equivalent cone
+        #       diameter at top of capsule (small diameter, x1, 0)
+        #       distance to capsule shoulder
+        #       length of capsule shoulder
+        #       diameter at bottom of capsule (large diameter)
+        #       distance to bottom of capsule
+        #           calculate equivalent cone
+        # calculate Cna
+        # calculate x_bar
         x_bar = 0                   ################ to be updated later
+    # update Rocket class with calculated values
     rocket.add_component("Nose", len_nose)
     rocket.add_Cn_alpha(Cna_nose)
     rocket.add_x_bar(x_bar)
@@ -247,16 +191,82 @@ def find_body(rocket):
     :param rocket: (object) current class object being calculated
     :return: 0 or 1
     """
-    dist_to_body = float(input("Enter the distance from the forward tip of the nose cone to the top of the body tube (in inches): "))
+    # this input would be nice to automate in the future
+    body_no = input("Enter the body tube number (from nose to tail): ")
+    body_num = "Body_" + body_no
+    dist_to_body = rocket.get_length()
     len_body = float(input("Enter the length of the body tube (in inches): "))
-    diam_body = input("Enter the diameter of the body tube (in inches): ")
+    diam_body = float(input("Enter the diameter of the body tube (in inches): "))
     Cna_body = 0                    # standard input - body tube section does not contribute normal force
     x_bar = dist_to_body + (len_body / 2)
     rocket.add_diameter(diam_body)
-    rocket.add_component("Body", len_body)
+    rocket.add_component(body_num, len_body)
     rocket.add_Cn_alpha(Cna_body)
     rocket.add_x_bar(x_bar)
     rocket.add_length(len_body)
+
+def find_taper(rocket, taper_type):
+    """
+    module to get rocket shoulder/boattail length and diameter from user
+    :param rocket: (object) current class object being calculated
+    :return: 0 or 1
+    """
+    dist_to_taper = float(input("Enter the distance from the forward tip of the nose cone to the top of the taper section (in inches): "))
+    len_taper = float(input("Enter the length of the taper section (in inches): "))
+    diam1_taper = float(input("Enter the smaller diameter of the taper section (in inches): "))
+    diam2_taper = float(input("Enter the larger diameter of the taper section (in inches): "))
+    diam_nose = rocket.get_diameter()
+    Cna_taper = 2 * ((diam2_taper / diam_nose)**2 - (diam1_taper / diam_nose)**2 )
+    x_bar = dist_to_taper + (len_taper / 3) * (1 + (1 - diam1_taper / diam2_taper) / (1 - (diam1_taper / diam2_taper)**2))
+    if taper_type == 1:
+        rocket.add_component("Shoulder", len_taper)
+    elif taper_type == 2:
+        rocket.add_component("Boattail", len_taper)
+    rocket.add_Cn_alpha(Cna_taper)
+    rocket.add_x_bar(x_bar)
+    rocket.add_length(len_taper)
+
+def find_fins(rocket):
+    """
+    module to get distance to rocket fins, number, and dimensions from user, calculate area, Cna, and x_bar
+    number of fins limited to 3, 4, or 6 fins by governing equations
+    fin shape is limited to 3 or 4 points (to be revisited at a later date)
+    :param rocket: (object) current class object being calculated
+    :return: 0 or 1
+    """
+    dist_to_fins = float(input("Enter the distance from the forward tip of the nose cone to the upper tip of fins (in inches): "))
+    num_fins = int(input("Enter the number of fins on your rocket (must be 3, 4, or 6): "))
+    dim_a = float(input("Enter the length of the fin base (where the fin meets the body) in inches: "))
+    dim_b = float(input("Enter the length of the fin along the tip in inches: "))
+    dim_m = float(input("Enter the distance from the front of the fin (at the body) to the front tip in inches: "))
+    dim_s = float(input("Enter the distance from the fin root to the tip in inches: "))
+    # calculate chord (l) - adjacent = dim_s
+    adj = dim_s
+    opp = (dim_b / 2 + dim_m) - (dim_a / 2)
+    chord =  math.sqrt(adj**2 + opp**2)
+    # calculate Cn_alpha for fin
+    diam = rocket.get_diameter()
+    cna_fin_num = 4 * num_fins * (chord / diam)**2
+    cna_fin_denom = 1 + math.sqrt(1 + ((2 * chord) / (dim_a + dim_b))**2)
+    cna_fin = cna_fin_num / cna_fin_denom
+    # calculate fin interference factor
+    rad = diam / 2
+    fin_factor = 1
+    if num_fins == 3 or num_fins == 4:
+        fin_factor = 1 + rad / (rad + chord)
+    elif num_fins == 6:
+        fin_factor = 1 + (0.5 * rad) / (rad + chord)
+    # else:
+    #    print("Error") # loop this
+    Cna_fins = fin_factor * cna_fin
+    # calculate x_bar_fin
+    x_bar_fin_term_1 = (chord * (dim_a + 2 * dim_b)) / (3 * (dim_a + dim_b))
+    x_bar_fin_term_2 = (1 / 6) * (dim_a + dim_b - ((dim_a * dim_b) / (dim_a + dim_b)))
+    x_bar_fins = dist_to_fins + x_bar_fin_term_1 + x_bar_fin_term_2
+    rocket.add_component("Fins", dist_to_fins)
+    rocket.add_Cn_alpha(Cna_fins)
+    rocket.add_x_bar(x_bar_fins)
+
 
 def find_Cna(rocket):
     """
@@ -290,12 +300,11 @@ def find_Cna(rocket):
         elif comp == 2:
             find_body(rocket)
         elif comp == 3:
-            pass
+            find_taper(rocket, 1)
         elif comp == 4:
-            pass
+            find_taper(rocket, 2)
         elif comp == 5:
-            pass
-    # need to add validation that nose, body and fins have been entered
+            find_fins(rocket)
     return 0
 
 def validate_input(value, min_val, max_val, err_code):

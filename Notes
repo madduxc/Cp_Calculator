@@ -1,0 +1,76 @@
+# Notes from readings.
+# Assumptions:  relative angle less than 10 degrees
+#               velocity less 600 feet/sec (much less than speed of sound)
+#               airflow is smooth with no rapid change
+#               rocket thin compared to length (t/l </= ???)
+#               nose comes smoothly to a point
+#               rocket is an axially symmetric rigid body
+#               fins are thin, flat plates
+#
+# Cp margin should be at least equal to the diameter of the largest body tube (inches)
+# Cp margin defined?  (Cp - Cg) ?
+# Normal force on each region represented by Cn_alpha
+# Normal force acting on the body is negligible for small alpha (<30 degrees).
+# Body geometry is required for fin Cp calcs and drawing pictures
+# Center of pressure on each region represented by x_bar
+#
+# Total force acting on rocket (Cn_alpha_rocket) is sum of forces acting on nose, shoulders, boattails,
+#  and fins in body effect
+# Required: rocket must have nose, one body section, and fins - others can be set to zero if not present
+#
+# Center of pressure for entire rocket (x_bar_rocket) is the sum of the moments acting on each
+# component of the rocket (Cn_alpha_nose * x_bar_nose + ... + Cn_alpha_fins_in_body_effect * x_bar_fins)
+# divided by Cn_alpha_rocket
+
+# Basic structure
+# Print statement - purpose of the code, limitations, definitions
+# General input: name of rocket, date, [number of stages], number of body sections, number of shoulders, number of
+# boattails, number of fins (repeat for each stage)
+# Create object of Rocket class
+# Define two lists: one to collect Cn_alpha_component; one to collect x_bar_component
+#
+# Enter type of section to calculate (if none, enter 0)
+#   0 = exit
+#   1 = nose (required)
+#   2 = body (required)
+#   3 = shoulder
+#   4 = boattail
+#   5 = fins (required)
+# While type != 0
+#   Case 1:
+#       Call nose module
+#           Pass object to module
+#               nose module requests input for nose length, diameter, and shape
+#                   1 = Conical
+#                   2 = Ogive (curved surface, pointed tip)
+#                   3 = Parabolic (curved surface, rounded tip)
+#                   4 = Capsule (Mercury, Gemini, Saturn)
+#               enter values to object
+#               Cn_nose = 2
+#               look up x_bar_nose based on shape
+#               capsule is a special case which requires additional input and calculation
+#           Return Cn_alpha_nose, x_bar_nose
+# Enter Cn_nose and x_bar_nose values to lists
+#   Case 2:
+#       Call body module
+#           Pass object to module
+#               Body module requests input for body segment length, diameter, and distance from ref
+#               Enter values to object
+#               Check sum to verify distance from ref = distance + length of previous
+#               Check sum to verify diameter of previous object = body diameter
+#           Return 0
+#   Case 3 or Case 4:
+#       Call shoulder/boattail module
+#           Pass object to module
+#               Shoulder/boattail module requests inputs for length, d1, d2, and dist from ref
+#               Enter values to object
+#               Look up nose diameter
+#               Calculate Cn_s/b = 2 * ( (d2 / d_nose)^2 - (d1 / d_nose)^2)
+#               Calculate x_bar_s/b = x_s/b + L/3 * (1 + (1 - d1/d2) / (1 - (d1/d2)^2))
+#               Check sum to verify distance from ref = distance + length of previous
+#               Check sum to verify diameter of previous object = d1
+#           Return Cn_s/b, x_bar_s/b
+#   Case 5:
+#       Call fin module
+#           Pass object to module
+#               Fin module requests inputs for # fins (3, 4, or 6 only)
