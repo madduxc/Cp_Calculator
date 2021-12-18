@@ -333,7 +333,16 @@ def find_Cna(rocket):
         elif comp == 5:
             find_fins(rocket)
     # add section to calculate Cna and x_bar for entire rocket
-    return 0
+    cna_list = rocket.get_Cn_alpha()
+    x_bar_list = rocket.get_x_bar()
+    num_comp = len(x_bar_list)
+    cna_total = 0
+    x_bar_total = 0
+    for elem in range(0, num_comp):
+        cna_total += cna_list[elem]
+        x_bar_total += cna_list[elem] * x_bar_list[elem]
+    x_bar = x_bar_total / cna_total
+    return x_bar
 
 def validate_input(value, min_val, max_val, err_code):
     """
@@ -367,6 +376,17 @@ def main():
     """
     Primary function to introduce program, collect user input, and call modules for calculation
     """
+    # To Do:    verify proper handling of body diameter
+    #           add input for Cg and calculate Cp Margin; check against diameter to show good/bad
+    #           develop an output format to show summary and final results
+    #           develop unittests that simulate input for each module
+    #           develop full test cases that include each combination (if possible) and compare to hand calcs
+    #           add data validation for the remaining inputs
+    #           integrate with GUI
+    #           add option to save information to a file
+    #           add option for second set of fins
+    #           add option for multi-stage rockets
+
     cna_description = ("Normal force on each region represented by Cn_alpha.",
                        "Center of pressure on each region represented by x_bar.",
                        "Total force acting on rocket (Cn_alpha_rocket) is sum of forces acting on nose, shoulders,",
@@ -393,12 +413,13 @@ def main():
     rocket_1 = initialize_rocket()
     print_statement(cna_description)
     print(rocket_1.get_name())
-    find_Cna(rocket_1)
+    total_x = find_Cna(rocket_1)
     print("Rocket Name: ", rocket_1.get_name())
     print("Rocket Length: ", rocket_1.get_length(), " in.")
     print(rocket_1.get_components())
     print("Cn_alpha: ", rocket_1.get_Cn_alpha())
     print("x_bar: ", rocket_1.get_x_bar())
+    print(round(total_x, 2))
 
 
 if __name__ == "__main__":
