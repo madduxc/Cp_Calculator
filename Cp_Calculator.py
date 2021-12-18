@@ -28,6 +28,8 @@ class Rocket():
         self._components = {}               # {} dictionary of components analyzed and corresponding length
         self._x_bar = []                    # [in] array of x_bar values corresponding to components
         self._comp_Cn_alpha = []            # [] array of Cn_alpha values corresponding to components
+        self._Cna = 0                       # calculated Cn_alpha for complete rocket
+        self._xBar = 0                      # calculated x_Bar for complete rocket
 
     def get_name(self):
         """
@@ -128,6 +130,35 @@ class Rocket():
         """
         return self._length
 
+    def set_Cna(self, cna_rocket):
+        """
+        Enters calculated Cn_alpha for complete rocket to Rocket class
+        :param cna_rocket: (float)
+        :return: none
+        """
+        self._Cna = cna_rocket
+
+    def get_Cna(self):
+        """
+        Returns calculated Cn_alpha for complete rocket from Rocket class
+        :return: Cna
+        """
+        return self._Cna
+
+    def set_xBar(self, xBar):
+        """
+        Enters calculated xBar for complete rocket to Rocket class
+        :param xBar: (float)
+        :return: none
+        """
+        self._xBar = xBar
+
+    def get_xBar(self):
+        """
+        Returns calculated xBar for complete rocket from Rocket class
+        :return: xBar
+        """
+        return self._xBar
 
 def initialize_rocket():
     """
@@ -219,6 +250,14 @@ def find_body(rocket):
     rocket.add_diameter(diam_body)
     rocket.add_component(body_num, len_body)
     rocket.add_length(len_body)
+    body_err = 1                            # initialize error flag
+    while body_err != 0:
+        body_err = 0                        # clear error code - if no error, code will exit error loop
+        fins = input("Does this body tube have fns attached? (1 = yes; 2 = no): ")
+        body_err = validate_input(fins, 1, 2, body_err)
+    fins = ord(fins) - 48  # convert to integer value
+    if fins == 1:
+        find_fins(rocket, diam_body, body_no)
     return 0
 
 def find_taper(rocket, taper_type):
@@ -245,7 +284,7 @@ def find_taper(rocket, taper_type):
     rocket.add_length(len_taper)
     return 0
 
-def find_fins(rocket):
+def find_fins(rocket, diam=0, fin_num=1):
     """
     module to get distance to rocket fins, number, and dimensions from user, calculate area, Cna, and x_bar
     number of fins limited to 3, 4, or 6 fins by governing equations
@@ -268,7 +307,8 @@ def find_fins(rocket):
     opp = (dim_b / 2 + dim_m) - (dim_a / 2) # opposite edge of triangle based at intersection of chord and fin root
     chord =  math.sqrt(adj**2 + opp**2)     # calculate long leg of right triangle
     # calculate Cn_alpha for fin
-    diam = rocket.get_diameter()
+    if diam == 0:
+        diam = rocket.get_diameter()
     # calculate Cna of fins per Ref 1, Section 4
     cna_fin_num = 4 * num_fins * (chord / diam)**2                              # numerator of Cna equation
     cna_fin_denom = 1 + math.sqrt(1 + ((2 * chord) / (dim_a + dim_b))**2)       # denominator of Cna equation
@@ -289,11 +329,31 @@ def find_fins(rocket):
     x_bar_fin_term_2 = (1 / 6) * (dim_a + dim_b - ((dim_a * dim_b) / (dim_a + dim_b)))
     x_bar_fins = dist_to_fins + x_bar_fin_term_1 + x_bar_fin_term_2
     # add component, Cna, and x_bar to Rocket
-    rocket.add_component("Fins", dist_to_fins)
+    fin_id = "Fins_" + fin_num
+    rocket.add_component(fin_id, dist_to_fins)
     rocket.add_Cn_alpha(Cna_fins)
     rocket.add_x_bar(x_bar_fins)
     return 0
 
+def find_xbar(rocket):
+    """
+    Calculates Cn_alpha and xBar for complete rocket and enters values to Rocket class
+    :param rocket: (object)
+    :return:
+    """
+    cna_list = rocket.get_Cn_alpha()        # retrieve list of values for component Cn_alphas
+    x_bar_list = rocket.get_x_bar()         # retrieve list of values for component x_bars
+    num_comp = len(x_bar_list)              # find number of components
+    cna_total = 0                           # initialize vars outside of loop
+    x_bar_total = 0
+    # calculate values for numerator (Cn_alpha) and denominator of xBar
+    for elem in range(0, num_comp):
+        cna_total += cna_list[elem]         # calculate Cn_alpha for complete rocket
+        x_bar_total += cna_list[elem] * x_bar_list[elem]
+    x_bar = x_bar_total / cna_total         # calculate xBar for complete rocket
+    rocket.set_Cna(cna_total)
+    rocket.set_xBar(x_bar)
+    return 0
 
 def find_Cna(rocket):
     """
@@ -307,13 +367,20 @@ def find_Cna(rocket):
     ### INPUT LOOP ###
     while comp != 0:                    # enter the input loop for calling Cn_alpha
         err_val = 1                     # initialize error code to set
-        component_call = ("Enter type of section to calculate (if none, enter 0):",
+        component_call = ("Components must be entered in order from the nose to the tail one at a time.  If two sets of",
+                          "fins are attached to a single body tube, enter it as two separate tubes with a fin set attached",
+                          "to each.\n",
+                          "Enter type of section to calculate (if none, enter 0):",
                           "     0 = Exit",
                           "     1 = Nose (1 required)",
                           "     2 = Body (At least 1 required)",
                           "     3 = Shoulder",
                           "     4 = Boattail",
                           "     5 = Fins (3, 4, or 6 required)")
+        cg_call = ("Enter the distance from the tip of the nose to the Cg location in inches of the rocket configured ",
+                   "with the largest motor expected, or enter '0' to skip Cp Margin calculation.")
+
+
         print_statement(component_call)
         ### ERROR LOOP ###
         while err_val != 0:             # validate input as single digit integer within valid range
@@ -332,17 +399,31 @@ def find_Cna(rocket):
             find_taper(rocket, 2)
         elif comp == 5:
             find_fins(rocket)
-    # add section to calculate Cna and x_bar for entire rocket
-    cna_list = rocket.get_Cn_alpha()
-    x_bar_list = rocket.get_x_bar()
-    num_comp = len(x_bar_list)
-    cna_total = 0
-    x_bar_total = 0
-    for elem in range(0, num_comp):
-        cna_total += cna_list[elem]
-        x_bar_total += cna_list[elem] * x_bar_list[elem]
-    x_bar = x_bar_total / cna_total
-    return x_bar
+    find_xbar(rocket)                       # call function to calculate Cna and x_bar for entire rocket
+    # section to calculate Cp Margin - probably move to separate function
+    print_statement(cg_call)                # get input from user
+    cg_val = float(input("Cg Value (or 0):"))
+    if cg_val != 0:
+        xBar = rocket.get_xBar()            # retrieve xBar from class object
+        Cp_margin = xBar - cg_val           # calculate cp margin. Should also check against body diameter
+        print(Cp_margin)                    # move this to print_results
+    return 0
+
+def print_results(rocket):
+    """
+    adf
+    :param rocket:
+    :return:
+    """
+    comps = rocket.get_components()
+    print("\n\nxBar and Cn_alpha Results for", rocket.get_name())
+    print("Values calculated for:")
+    for elem in comps:
+        print(elem)
+    print("Overall Rocket Length:", rocket.get_length(), " in.")
+    print("Cn_alpha:", round(rocket.get_Cna(), 3))
+    print("x_bar:", round(rocket.get_xBar(), 2))
+
 
 def validate_input(value, min_val, max_val, err_code):
     """
@@ -377,14 +458,12 @@ def main():
     Primary function to introduce program, collect user input, and call modules for calculation
     """
     # To Do:    verify proper handling of body diameter
-    #           add input for Cg and calculate Cp Margin; check against diameter to show good/bad
-    #           develop an output format to show summary and final results
+    #           add input for Cg and calculate Cp Margin; check against diameter to show good/bad - finish
     #           develop unittests that simulate input for each module
     #           develop full test cases that include each combination (if possible) and compare to hand calcs
     #           add data validation for the remaining inputs
     #           integrate with GUI
     #           add option to save information to a file
-    #           add option for second set of fins
     #           add option for multi-stage rockets
 
     cna_description = ("Normal force on each region represented by Cn_alpha.",
@@ -413,13 +492,14 @@ def main():
     rocket_1 = initialize_rocket()
     print_statement(cna_description)
     print(rocket_1.get_name())
-    total_x = find_Cna(rocket_1)
-    print("Rocket Name: ", rocket_1.get_name())
-    print("Rocket Length: ", rocket_1.get_length(), " in.")
-    print(rocket_1.get_components())
-    print("Cn_alpha: ", rocket_1.get_Cn_alpha())
-    print("x_bar: ", rocket_1.get_x_bar())
-    print(round(total_x, 2))
+    find_Cna(rocket_1)
+    print_results(rocket_1)
+    # print("Rocket Name: ", rocket_1.get_name())
+    # print("Rocket Length: ", rocket_1.get_length(), " in.")
+    # print(rocket_1.get_components())
+    # print("Cn_alpha: ", rocket_1.get_Cn_alpha())
+    # print("x_bar: ", rocket_1.get_x_bar())
+    # print(round(total_x, 2))
 
 
 if __name__ == "__main__":
