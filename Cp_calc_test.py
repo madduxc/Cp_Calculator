@@ -105,10 +105,10 @@ class TestRocketClass(TestCase):
         :param mocked_input: (patch)
         :return: none
         """
-        mocked_input.side_effect = ["Test 1", '1', '2.5', '1', '2', '1', '7.5', '0.5', '1', '6.5', '4', '1.0', '0.6', '0.8', '1.20', '0', '0']
+        mocked_input.side_effect = ["Test 1", '1', '2.5', '1', '2', '1', '7.5', '0.5', '1', '9.0', '4', '1.0', '0.6', '0.8', '1.20', '0', '0']
         rocket = Cp_Calculator.initialize_rocket()
         Cp_Calculator.find_Cna(rocket)
         self.assertEqual(rocket.get_name(), "Test 1")
         self.assertEqual(rocket.get_length(), 10)
         self.assertAlmostEqual(rocket.get_Cna(), 38.595, 3)
-        self.assertAlmostEqual(rocket.get_xBar(), 6.791, 3)
+        self.assertAlmostEqual(rocket.get_xBar(), 9.161, 3)

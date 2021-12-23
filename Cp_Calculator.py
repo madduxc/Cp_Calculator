@@ -29,7 +29,8 @@ class Rocket():
         self._x_bar = []                    # [in] array of x_bar values corresponding to components
         self._comp_Cn_alpha = []            # [] array of Cn_alpha values corresponding to components
         self._Cna = 0                       # calculated Cn_alpha for complete rocket
-        self._xBar = 0                      # calculated x_Bar for complete rocket
+        self._xBar = 0                      # [in] calculated x_Bar for complete rocket
+        self._Cg_Heavy = 0                  # [in] user input for center of gravity location with largest engine used
 
     def get_name(self):
         """
@@ -48,8 +49,8 @@ class Rocket():
 
     def get_diameter(self):
         """
-        Returns the Rocket diameter property when called
-        :return: Rocket._diameter
+        Returns the Rocket nose diameter property when called
+        :return: Rocket._diameter[0]
         """
         return self._diameter[0]
 
@@ -160,6 +161,23 @@ class Rocket():
         """
         return self._xBar
 
+    def set_CgMax(self, Cg_max):
+        """
+        Enters user input Cg for complete rocket at maximum engine weight to Rocket class
+        :param Cg_max: (float)
+        :return: none
+        """
+        self._Cg_Heavy = Cg_max
+
+    def get_CgMax(self):
+        """
+        Returns Cg for complete rocket at maximum engine weight from Rocket class
+        :return: _Cg_Heavy
+        """
+        return self._Cg_Heavy
+###########################################  END Rocket CLass  #####################################################
+
+#######################################  Begin Standalone Modules  #################################################
 def initialize_rocket():
     """
     function to set up basic rocket definition and call the initial Rocket class
@@ -170,7 +188,6 @@ def initialize_rocket():
     # send information to Rocket class to initialize Rocket
     rocket = Rocket(rocket_name)
     return rocket
-
 
 def find_nose(rocket):
     """
@@ -268,16 +285,21 @@ def find_taper(rocket, taper_type):
     """
     dist_to_taper = rocket.get_length()
     len_taper = float(input("Enter the length of the taper section in inches: "))
-    diam1_taper = float(input("Enter the smaller diameter of the taper section in inches: "))
-    diam2_taper = float(input("Enter the larger diameter of the taper section in inches: "))
-    diam_nose = rocket.get_diameter()       # this may be problematic with multiple body sections - testing required
-    Cna_taper = 2 * ((diam2_taper / diam_nose)**2 - (diam1_taper / diam_nose)**2 )
-    x_bar = dist_to_taper + (len_taper / 3) * (1 + (1 - diam1_taper / diam2_taper) / (1 - (diam1_taper / diam2_taper)**2))
-    # update component
+    small_diam_taper = float(input("Enter the smaller diameter of the taper section in inches: "))
+    large_diam_taper = float(input("Enter the larger diameter of the taper section in inches: "))
+    # determine shoulder or boattail, set correct diameter definition, and update component
     if taper_type == 1:
+        diam1_taper = small_diam_taper      # small dia to the top
+        diam2_taper = large_diam_taper      # large dia to the bottom
         rocket.add_component("Shoulder", len_taper)
     elif taper_type == 2:
+        diam1_taper = large_diam_taper      # large dia to the top
+        diam2_taper = small_diam_taper      # small dia to the bottom
         rocket.add_component("Boattail", len_taper)
+    # calculate Cna and xBar
+    diam_nose = rocket.get_diameter()       # diameter of first body tube defined
+    Cna_taper = 2 * ((diam2_taper / diam_nose)**2 - (diam1_taper / diam_nose)**2 )
+    x_bar = dist_to_taper + (len_taper / 3) * (1 + (1 - diam1_taper / diam2_taper) / (1 - (diam1_taper / diam2_taper)**2))
     # update Cna, x_bar, and rocket length
     rocket.add_Cn_alpha(Cna_taper)
     rocket.add_x_bar(x_bar)
@@ -411,9 +433,9 @@ def find_Cna(rocket):
 
 def print_results(rocket):
     """
-    adf
-    :param rocket:
-    :return:
+    Output results of Cp Calculations to screen for a given Rocket class object
+    :param rocket: (object)
+    :return: none
     """
     comps = rocket.get_components()
     print("\n\nxBar and Cn_alpha Results for", rocket.get_name())
@@ -457,14 +479,12 @@ def main():
     """
     Primary function to introduce program, collect user input, and call modules for calculation
     """
-    # To Do:    verify proper handling of body diameter
-    #           add input for Cg and calculate Cp Margin; check against diameter to show good/bad - finish
+    # To Do:    add input for Cg and calculate Cp Margin; check against diameter to show good/bad - finish
     #           develop unittests that simulate input for each module
     #           develop full test cases that include each combination (if possible) and compare to hand calcs
     #           add data validation for the remaining inputs
     #           integrate with GUI
     #           add option to save information to a file
-    #           add option for multi-stage rockets
 
     cna_description = ("Normal force on each region represented by Cn_alpha.",
                        "Center of pressure on each region represented by x_bar.",
