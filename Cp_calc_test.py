@@ -45,11 +45,70 @@ class TestRocketClass(TestCase):
         :param mocked_input: (patch)
         :return: none
         """
-        mocked_input.side_effect = ["Falcon Heavy", '3', '1']
+        mocked_input.side_effect = ["Test 1", '3', '1']
         rocket = Cp_Calculator.initialize_rocket()
         Cp_Calculator.find_nose(rocket)
-        self.assertEqual(rocket.get_name(), "Falcon Heavy")
+        self.assertEqual(rocket.get_name(), "Test 1")
         self.assertEqual(rocket.get_length(), 3)
         self.assertEqual(rocket.get_Cn_alpha(), [2])
         self.assertAlmostEqual(rocket.get_x_bar(), [2.0], 3)
 
+    @mock.patch('Cp_Calculator.input', create=True)
+    def test_find_nose_ogive(self, mocked_input):
+        """
+        tests find_nose method for calculating x_bar of ogive nose
+        :param mocked_input: (patch)
+        :return: none
+        """
+        mocked_input.side_effect = ["Test 2", '4', '2']
+        rocket = Cp_Calculator.initialize_rocket()
+        Cp_Calculator.find_nose(rocket)
+        self.assertEqual(rocket.get_name(), "Test 2")
+        self.assertEqual(rocket.get_length(), 4)
+        self.assertEqual(rocket.get_Cn_alpha(), [2])
+        self.assertAlmostEqual(rocket.get_x_bar(), [1.864], 3)
+
+    @mock.patch('Cp_Calculator.input', create=True)
+    def test_find_nose_parabola(self, mocked_input):
+        """
+        tests find_nose method for calculating x_bar of parabola nose
+        :param mocked_input: (patch)
+        :return: none
+        """
+        mocked_input.side_effect = ["Test 3", '3.5', '3']
+        rocket = Cp_Calculator.initialize_rocket()
+        Cp_Calculator.find_nose(rocket)
+        self.assertEqual(rocket.get_name(), "Test 3")
+        self.assertEqual(rocket.get_length(), 3.5)
+        self.assertEqual(rocket.get_Cn_alpha(), [2])
+        self.assertAlmostEqual(rocket.get_x_bar(), [1.75], 3)
+
+    @mock.patch('Cp_Calculator.input', create=True)
+    def test_find_nose_capsule(self, mocked_input):
+        """
+        tests find_nose method for calculating x_bar of parabola nose
+        :param mocked_input: (patch)
+        :return: none
+        """
+        mocked_input.side_effect = ["Test 4", '3', '4', '2.5', '1.25']
+        rocket = Cp_Calculator.initialize_rocket()
+        Cp_Calculator.find_nose(rocket)
+        self.assertEqual(rocket.get_name(), "Test 4")
+        self.assertEqual(rocket.get_length(), 3)
+        self.assertEqual(rocket.get_Cn_alpha(), [2])
+        self.assertIn(1, rocket.get_x_bar())
+
+    @mock.patch('Cp_Calculator.input', create=True)
+    def test_basic_rocket(self, mocked_input):
+        """
+        tests nose, body, and fin modules for finding total xBar
+        :param mocked_input: (patch)
+        :return: none
+        """
+        mocked_input.side_effect = ["Test 1", '1', '2.5', '1', '2', '1', '7.5', '0.5', '1', '6.5', '4', '1.0', '0.6', '0.8', '1.20', '0', '0']
+        rocket = Cp_Calculator.initialize_rocket()
+        Cp_Calculator.find_Cna(rocket)
+        self.assertEqual(rocket.get_name(), "Test 1")
+        self.assertEqual(rocket.get_length(), 10)
+        self.assertAlmostEqual(rocket.get_Cna(), 38.595, 3)
+        self.assertAlmostEqual(rocket.get_xBar(), 6.791, 3)

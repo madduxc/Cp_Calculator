@@ -253,7 +253,7 @@ def find_body(rocket):
     body_err = 1                            # initialize error flag
     while body_err != 0:
         body_err = 0                        # clear error code - if no error, code will exit error loop
-        fins = input("Does this body tube have fns attached? (1 = yes; 2 = no): ")
+        fins = input("Does this body tube have fins attached? (1 = yes; 2 = no): ")
         body_err = validate_input(fins, 1, 2, body_err)
     fins = ord(fins) - 48  # convert to integer value
     if fins == 1:
@@ -310,22 +310,22 @@ def find_fins(rocket, diam=0, fin_num=1):
     if diam == 0:
         diam = rocket.get_diameter()
     # calculate Cna of fins per Ref 1, Section 4
-    cna_fin_num = 4 * num_fins * (chord / diam)**2                              # numerator of Cna equation
+    cna_fin_num = 4 * num_fins * (dim_s / diam)**2                              # numerator of Cna equation
     cna_fin_denom = 1 + math.sqrt(1 + ((2 * chord) / (dim_a + dim_b))**2)       # denominator of Cna equation
     cna_fin = cna_fin_num / cna_fin_denom
     # calculate fin interference factor per Ref 1, Sect 4
     rad = diam / 2
     fin_factor = 1                          # initialize var outside of loop
     if num_fins == 3 or num_fins == 4:
-        fin_factor = 1 + rad / (rad + chord)
+        fin_factor = 1 + rad / (rad + dim_s)
     elif num_fins == 6:
-        fin_factor = 1 + (0.5 * rad) / (rad + chord)
+        fin_factor = 1 + (0.5 * rad) / (rad + dim_s)
     else:
         print("Error entering the number of fins.")
         return 1
     Cna_fins = fin_factor * cna_fin
     # calculate x_bar_fin per Ref 1, Sect 4
-    x_bar_fin_term_1 = (chord * (dim_a + 2 * dim_b)) / (3 * (dim_a + dim_b))
+    x_bar_fin_term_1 = (dim_m * (dim_a + 2 * dim_b)) / (3 * (dim_a + dim_b))
     x_bar_fin_term_2 = (1 / 6) * (dim_a + dim_b - ((dim_a * dim_b) / (dim_a + dim_b)))
     x_bar_fins = dist_to_fins + x_bar_fin_term_1 + x_bar_fin_term_2
     # add component, Cna, and x_bar to Rocket
