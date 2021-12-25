@@ -31,6 +31,7 @@ class Rocket():
         self._Cna = 0                       # calculated Cn_alpha for complete rocket
         self._xBar = 0                      # [in] calculated x_Bar for complete rocket
         self._Cg_Heavy = 0                  # [in] user input for center of gravity location with largest engine used
+        self._Cp_Margin = -1                # xBar - Cg_Heavy
 
     def get_name(self):
         """
@@ -175,9 +176,26 @@ class Rocket():
         :return: _Cg_Heavy
         """
         return self._Cg_Heavy
+
+    def set_Margin(self, margin):
+        """
+        Enters calculated Margin of Safety between Center of Pressure and Center of Gravity at it heaviest engine load
+        :param margin: (float)
+        :return: none
+        """
+        self._Cp_Margin = margin
+
+    def get_Margin(self):
+        """
+        Returns calculated Cp Margin from Rocket class
+        :return: _Cp_Margin
+        """
+        return self._Cp_Margin
+
 ###########################################  END Rocket CLass  #####################################################
 
 #######################################  Begin Standalone Modules  #################################################
+
 def initialize_rocket():
     """
     function to set up basic rocket definition and call the initial Rocket class
@@ -220,36 +238,47 @@ def find_nose(rocket):
     elif shape == 3:
         x_bar = 0.5 * len_nose              # for parabolic nose per Ref 1, Sect 4
     else:
-        capsule_err = 1                     # set error flag
-        while capsule_err != 0:
-            capsule_err = 0                 # clear error flag
-            diam_1_capsule = float(input("Enter the diameter of the base of the capsule in inches (body tube diameter): "))
-            diam_2_capsule = float(input("Enter the diameter at the top of the capsule in inches (not including escape tower): "))
-            if diam_1_capsule <= diam_2_capsule:
-                capsule_err = 1             # set error flag
-                print("Error: Diameter at base of capsule must be larger than diameter at top of capsule.")
-        # perform slope-intercept calculation with axis origin at top/center of capsule body
-        x_1 = len_nose                      # equations per Ref 1, Sect 4 for capsule nose
-        x_2 = 0                             # top of module based at origin
-        y_1 = diam_1_capsule / 2            # y1 = radius of module at body tube
-        y_2 = diam_2_capsule / 2            # y2 = radius of module at top of capsule
-        slope_m = (y_2 - y_1) / (x_2 - x_1)
-        b_1 = y_1 - slope_m * x_1           # check sum 1
-        b_2 = y_2 - slope_m * x_2           # check sum 2
-        # verify values calculated correctly at each point
-        if b_1 != b_2:
-            print("Error in Capsule inputs.")
-            return 1
-        delta_l = b_1 / slope_m             # length = absolute value of x intercept
-        len_equiv_capsule = len_nose + delta_l      # x_bar calculated based on length of equivalent cone length
-        x_bar_equiv = 2 / 3 * len_equiv_capsule     # x_bar of this equivalent conical nose
-        x_bar = x_bar_equiv - delta_l               # subtract equivalent length
+        x_bar = calculate_capsule(len_nose)
     # update Rocket class with calculated values
     rocket.add_component("Nose", len_nose)
     rocket.add_Cn_alpha(Cna_nose)
     rocket.add_x_bar(x_bar)
     rocket.add_length(len_nose)
     return 0
+
+def calculate_capsule(length):
+    """
+    Module to calculate Cna and xBar of Capsule-shaped nose piece
+    :param length: (float)
+    :return: Cna_nose, xBar_nose
+    """
+    capsule_err = 1  # set error flag
+    while capsule_err != 0:
+        capsule_err = 0  # clear error flag
+        diam_1_capsule = float(input("Enter the diameter of the base of the capsule in inches (body tube diameter): "))
+        diam_2_capsule = float(
+            input("Enter the diameter at the top of the capsule in inches (not including escape tower): "))
+        if diam_1_capsule <= diam_2_capsule:
+            capsule_err = 1  # set error flag
+            print("Error: Diameter at base of capsule must be larger than diameter at top of capsule.")
+    # perform slope-intercept calculation with axis origin at top/center of capsule body
+    x_1 = length  # equations per Ref 1, Sect 4 for capsule nose
+    x_2 = 0  # top of module based at origin
+    y_1 = diam_1_capsule / 2  # y1 = radius of module at body tube
+    y_2 = diam_2_capsule / 2  # y2 = radius of module at top of capsule
+    slope_m = (y_2 - y_1) / (x_2 - x_1)
+    b_1 = y_1 - slope_m * x_1  # check sum 1
+    b_2 = y_2 - slope_m * x_2  # check sum 2
+    # verify values calculated correctly at each point
+    if b_1 != b_2:
+        print("Error in Capsule inputs.")
+        return 1
+    delta_l = b_1 / slope_m  # length = absolute value of x intercept
+    len_equiv_capsule = length + delta_l  # x_bar calculated based on length of equivalent cone length
+    x_bar_equiv = 2 / 3 * len_equiv_capsule  # x_bar of this equivalent conical nose
+    x_bar = x_bar_equiv - delta_l  # subtract equivalent length
+    return x_bar
+
 
 def find_body(rocket):
     """
@@ -428,7 +457,8 @@ def find_Cna(rocket):
     if cg_val != 0:
         xBar = rocket.get_xBar()            # retrieve xBar from class object
         Cp_margin = xBar - cg_val           # calculate cp margin. Should also check against body diameter
-        print(Cp_margin)                    # move this to print_results
+        rocket.set_CgMax(cg_val)
+        rocket.set_Margin(Cp_margin)
     return 0
 
 def print_results(rocket):
@@ -445,7 +475,17 @@ def print_results(rocket):
     print("Overall Rocket Length:", rocket.get_length(), " in.")
     print("Cn_alpha:", round(rocket.get_Cna(), 3))
     print("x_bar:", round(rocket.get_xBar(), 2))
-
+    cg = rocket.get_CgMax()
+    if cg != 0:
+        cp_margin = rocket.get_Margin()
+        diam = rocket.get_diameter()        # this is the nose diameter.  Needs to be updated to largest diameter
+        print("Cp Margin: ", round(cp_margin,2))
+        if cp_margin > 0 and cp_margin <= diam:
+            print("This margin is idea for safety of flight.")
+        elif cp_margin > 0:
+            print("This margin is acceptable, but may not be ideal for safety of flight.")
+        else:
+            print("This margin is not acceptable for safety of flight.")
 
 def validate_input(value, min_val, max_val, err_code):
     """
@@ -479,8 +519,7 @@ def main():
     """
     Primary function to introduce program, collect user input, and call modules for calculation
     """
-    # To Do:    add input for Cg and calculate Cp Margin; check against diameter to show good/bad - finish
-    #           develop unittests that simulate input for each module
+    # To Do:    develop unittests that simulate input for each module (in process - nose complete)
     #           develop full test cases that include each combination (if possible) and compare to hand calcs
     #           add data validation for the remaining inputs
     #           integrate with GUI
